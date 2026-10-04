@@ -21,10 +21,10 @@ Zahlen 2–12, jede Farbe kommt insgesamt 11-mal vor und jede Reihe endet mit ei
 
 - Ankreuzen nur von links nach rechts; übersprungene Felder werden ausgegraut.
 - Das letzte Feld ist erst ab 5 Kreuzen in der Reihe frei. Wird es angekreuzt, ist die Reihe
-  abgeschlossen und das Schloss zählt als Extra-Kreuz in der Farbe des Schlosses.
+  abgeschlossen und das Schloss zählt als Extra-Kreuz in dieser Reihe.
 - Schließt ein Mitspieler eine Reihe ab: aufs Schloss tippen – die Reihe wird gesperrt.
-- Fehlwürfe (je −5), automatische Wertung pro Farbe (1, 3, 6, 10 … 78) und Gesamtsumme.
-- Bei „Gemischte Farben“ zählen Kreuze nach der Farbe des Feldes.
+- Fehlwürfe (je −5), automatische Wertung pro Reihe (1, 3, 6, 10 … 78) und Gesamtsumme.
+- Auch bei gemischten Farben wird pro Reihe gewertet, nicht nach Feldfarbe.
 - Spielende-Hinweis bei zwei geschlossenen Reihen oder vier Fehlwürfen.
 - Rückgängig, Spielstand wird automatisch gespeichert, Bildschirm bleibt an.
 

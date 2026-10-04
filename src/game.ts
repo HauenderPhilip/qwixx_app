@@ -1,4 +1,4 @@
-import { COLORS, getVariant } from './variants';
+import { getVariant } from './variants';
 import type { Color, Variant, VariantId } from './variants';
 
 export const MAX_PENALTIES = 4;
@@ -94,30 +94,29 @@ export function pointsForCrosses(n: number): number {
   return (n * (n + 1)) / 2;
 }
 
+export type RowScore = {
+  /** Farbe des Wertungsfelds – die Farbe des Schlosses dieser Reihe. */
+  color: Color;
+  crosses: number;
+  points: number;
+};
+
 export type Score = {
-  crosses: Record<Color, number>;
-  points: Record<Color, number>;
+  rows: RowScore[];
   penaltyPoints: number;
   total: number;
 };
 
+/** Gewertet wird pro Reihe: angekreuzte Felder plus Schloss, egal welche Farbe die Felder haben. */
 export function computeScore(state: GameState, variant: Variant): Score {
-  const crosses = { red: 0, yellow: 0, green: 0, blue: 0 } as Record<Color, number>;
-  variant.rows.forEach((rowDef, r) => {
+  const rows = variant.rows.map((rowDef, r) => {
     const row = state.rows[r];
-    rowDef.cells.forEach((cell, c) => {
-      if (row.marked[c]) crosses[cell.color] += 1;
-    });
-    if (row.locked) crosses[rowDef.lockColor] += 1;
+    const crosses = markCount(row) + (row.locked ? 1 : 0);
+    return { color: rowDef.lockColor, crosses, points: pointsForCrosses(crosses) };
   });
-  const points = { red: 0, yellow: 0, green: 0, blue: 0 } as Record<Color, number>;
-  let total = 0;
-  for (const color of COLORS) {
-    points[color] = pointsForCrosses(crosses[color]);
-    total += points[color];
-  }
   const penaltyPoints = state.penalties * PENALTY_POINTS;
-  return { crosses, points, penaltyPoints, total: total - penaltyPoints };
+  const total = rows.reduce((sum, row) => sum + row.points, 0) - penaltyPoints;
+  return { rows, penaltyPoints, total };
 }
 
 export function closedRowCount(state: GameState): number {

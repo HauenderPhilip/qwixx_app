@@ -6,7 +6,7 @@ export type Cell = { number: number; color: Color };
 
 export type RowDef = {
   cells: Cell[];
-  /** Farbe des Schlosses: zählt beim Abschließen als zusätzliches Kreuz dieser Farbe. */
+  /** Farbe des Schlosses und des Wertungsfelds der Reihe. */
   lockColor: Color;
 };
 

@@ -1,7 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { Score } from '../game';
 import { PALETTE, UI } from '../theme';
-import { COLORS } from '../variants';
 
 type Props = { score: Score; size: number; gameOver: boolean };
 
@@ -13,12 +12,12 @@ export function ScoreBar({ score, size, gameOver }: Props) {
 
   return (
     <View style={styles.bar}>
-      {COLORS.map((color, i) => (
-        <View key={color} style={styles.group}>
+      {score.rows.map((row, i) => (
+        <View key={i} style={styles.group}>
           {i > 0 && <Text style={[styles.op, op]}>+</Text>}
-          <View style={[styles.box, box, { borderColor: PALETTE[color].band }]}>
-            <Text style={[styles.points, big]}>{score.points[color]}</Text>
-            <Text style={[styles.crosses, small]}>{score.crosses[color]}×</Text>
+          <View style={[styles.box, box, { borderColor: PALETTE[row.color].band }]}>
+            <Text style={[styles.points, big]}>{row.points}</Text>
+            <Text style={[styles.crosses, small]}>{row.crosses}×</Text>
           </View>
         </View>
       ))}

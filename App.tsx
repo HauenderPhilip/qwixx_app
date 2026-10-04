@@ -243,10 +243,10 @@ function HelpModal({ visible, onClose }: { visible: boolean; onClose: () => void
             • Kreuze immer von links nach rechts. Übersprungene Felder werden ausgegraut.{'\n'}
             • Das letzte Feld einer Reihe ist erst ab {MIN_MARKS_TO_LOCK} Kreuzen in dieser Reihe
             frei. Kreuzt du es an, wird die Reihe abgeschlossen und das Schloss zählt als
-            zusätzliches Kreuz in der Farbe des Schlosses.{'\n'}
+            zusätzliches Kreuz in dieser Reihe.{'\n'}
             • Schließt ein Mitspieler eine Reihe ab, tippe auf das Schloss dieser Reihe – sie wird
             für dich gesperrt (erneut tippen hebt das wieder auf).{'\n'}
-            • Bei „Gemischte Farben“ zählen die Kreuze nach der Farbe des Feldes, nicht der Reihe.
+            • Gewertet wird pro Reihe, auch wenn die Felder einer Reihe verschiedene Farben haben.
             {'\n'}• Zufallsblock: Unter „Neues Spiel“ einen Block würfeln und den Code rechts neben
             dem Block an Mitspieler weitergeben. Sie geben ihn bei „Code“ ein und spielen denselben
             Block.
