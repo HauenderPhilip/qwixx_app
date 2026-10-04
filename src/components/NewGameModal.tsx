@@ -1,5 +1,5 @@
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { PALETTE, UI } from '../theme';
+import { DISCLAIMER, PALETTE, UI } from '../theme';
 import { VARIANTS, Variant, VariantId } from '../variants';
 
 type Props = {
@@ -39,9 +39,12 @@ export function NewGameModal({ visible, currentVariant, onSelect, onCancel }: Pr
               </Pressable>
             ))}
           </ScrollView>
-          <Pressable onPress={onCancel} style={styles.cancel}>
-            <Text style={styles.cancelText}>Abbrechen</Text>
-          </Pressable>
+          <View style={styles.footer}>
+            <Text style={styles.disclaimer}>{DISCLAIMER}</Text>
+            <Pressable onPress={onCancel} style={styles.cancel}>
+              <Text style={styles.cancelText}>Abbrechen</Text>
+            </Pressable>
+          </View>
         </View>
       </View>
     </Modal>
@@ -108,6 +111,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   previewNumber: { color: '#FFFFFF', fontSize: 7, fontWeight: '800' },
-  cancel: { alignSelf: 'flex-end', marginTop: 12, paddingVertical: 8, paddingHorizontal: 14 },
+  footer: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 12 },
+  disclaimer: { flex: 1, fontSize: 11, lineHeight: 15, color: UI.muted },
+  cancel: { paddingVertical: 8, paddingHorizontal: 14 },
   cancelText: { fontSize: 15, fontWeight: '700', color: UI.muted },
 });

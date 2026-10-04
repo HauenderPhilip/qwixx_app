@@ -1,15 +1,15 @@
-# Qwixx Block
+# Kreuzblock
 
-Digitaler Wertungsblock für das Würfelspiel **Qwixx**. Gewürfelt wird ganz normal mit echten
-Würfeln, angekreuzt wird in der App. Läuft auf **Android und iOS** (Expo / React Native).
+Digitaler Wertungsblock zum Ankreuzen für Würfelspiele nach dem Qwixx-Prinzip. Gewürfelt wird
+ganz normal mit echten Würfeln, angekreuzt wird in der App. Läuft auf **Android und iOS** (Expo / React Native).
 
 ## Spielblöcke
 
 | Block | Beschreibung |
 | --- | --- |
 | Klassisch | Rot & Gelb 2→12, Grün & Blau 12→2 |
-| Gemischte Zahlen | Jede Reihe einfarbig, Zahlen durcheinander (Qwixx Mixx) |
-| Gemischte Farben | Zahlen geordnet, Farben wechseln innerhalb der Reihe (Qwixx Mixx) |
+| Gemischte Zahlen | Jede Reihe einfarbig, Zahlen durcheinander |
+| Gemischte Farben | Zahlen geordnet, Farben wechseln innerhalb der Reihe |
 
 ## Funktionen
 
@@ -46,3 +46,9 @@ npx eas-cli@latest build --platform ios       # benötigt Apple-Developer-Accoun
 - `src/game.ts` – Regeln und Wertung (reine Funktionen)
 - `src/components/` – Oberfläche
 - `npm run typecheck` – TypeScript-Prüfung
+
+## Hinweis
+
+Inoffizielle Spielhilfe zum Mitschreiben, nicht kommerziell. Kein offizielles Produkt und keine
+Verbindung zum Nürnberger-Spielkarten-Verlag (NSV). „Qwixx“ ist eine Marke ihres Inhabers.
+Zum Spielen braucht ihr das Originalspiel.

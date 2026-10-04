@@ -15,3 +15,7 @@ export const UI = {
   grey: '#B9B9BE',
   penalty: '#6E6E73',
 };
+
+export const DISCLAIMER =
+  'Inoffizielle Spielhilfe zum Mitschreiben. Kein offizielles Produkt und keine Verbindung ' +
+  'zum Nürnberger-Spielkarten-Verlag (NSV). Zum Spielen braucht ihr das Originalspiel.';

@@ -19,10 +19,10 @@ import {
   newGame,
   toggleClosedByOther,
 } from './src/game';
-import { UI } from './src/theme';
+import { DISCLAIMER, UI } from './src/theme';
 import { VariantId, getVariant } from './src/variants';
 
-const STORAGE_KEY = 'qwixx-scoreboard/v1';
+const STORAGE_KEY = 'kreuzblock/v1';
 const MAX_HISTORY = 200;
 const PADDING = 12;
 const GAP = 12;
@@ -242,6 +242,7 @@ function HelpModal({ visible, onClose }: { visible: boolean; onClose: () => void
             • Spielende: zwei Reihen abgeschlossen oder vier Fehlwürfe.{'\n'}
             • Vertippt? „Rückgängig“ nimmt den letzten Schritt zurück.
           </Text>
+          <Text style={styles.disclaimer}>{DISCLAIMER}</Text>
           <Text style={styles.helpClose}>Tippen zum Schließen</Text>
         </View>
       </Pressable>
@@ -294,5 +295,6 @@ const styles = StyleSheet.create({
   helpCard: { backgroundColor: UI.sheet, borderRadius: 16, padding: 18, maxWidth: 620 },
   helpTitle: { fontSize: 18, fontWeight: '800', color: UI.ink, marginBottom: 8 },
   helpText: { fontSize: 14, lineHeight: 21, color: UI.ink },
+  disclaimer: { fontSize: 12, lineHeight: 17, color: UI.muted, marginTop: 12 },
   helpClose: { fontSize: 12, color: UI.muted, marginTop: 10, textAlign: 'right' },
 });
