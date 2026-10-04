@@ -10,6 +10,12 @@ ganz normal mit echten Würfeln, angekreuzt wird in der App. Läuft auf **Androi
 | Klassisch | Rot & Gelb 2→12, Grün & Blau 12→2 |
 | Gemischte Zahlen | Jede Reihe einfarbig, Zahlen durcheinander |
 | Gemischte Farben | Zahlen geordnet, Farben wechseln innerhalb der Reihe |
+| Gespiegelt | Rot & Gelb 12→2, Grün & Blau 2→12 |
+| Zickzack | Rot & Gelb 2, 12, 3, 11 … 7 – Grün & Blau 7, 6, 8, 5 … 12 |
+| Zufallsblock | Zahlen, Farben oder beides zufällig gemischt; teilbar per Code (z. B. `M-4821`) |
+
+Beim Zufallsblock ergibt derselbe Code auf jedem Gerät denselben Block. Jede Reihe enthält alle
+Zahlen 2–12, jede Farbe kommt insgesamt 11-mal vor und jede Reihe endet mit einer anderen Farbe.
 
 ## Funktionen
 

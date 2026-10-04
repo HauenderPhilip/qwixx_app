@@ -20,7 +20,7 @@ import {
   toggleClosedByOther,
 } from './src/game';
 import { DISCLAIMER, UI } from './src/theme';
-import { VariantId, getVariant } from './src/variants';
+import { VariantId, formatRandomCode, getVariant, randomCodeOf } from './src/variants';
 
 const STORAGE_KEY = 'kreuzblock/v1';
 const MAX_HISTORY = 200;
@@ -70,7 +70,8 @@ function ScoreSheetScreen() {
     AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(saved)).catch(() => {});
   }, [game, history, loaded]);
 
-  const variant = getVariant(game.variantId);
+  const variant = useMemo(() => getVariant(game.variantId), [game.variantId]);
+  const randomCode = randomCodeOf(game.variantId);
   const score = useMemo(() => computeScore(game, variant), [game, variant]);
   const gameOver = isGameOver(game);
 
@@ -143,6 +144,14 @@ function ScoreSheetScreen() {
           <Text style={styles.variantName} numberOfLines={2}>
             {variant.name}
           </Text>
+          {randomCode && (
+            <View>
+              <Text style={styles.label}>Code für Mitspieler</Text>
+              <Text style={styles.code} selectable>
+                {formatRandomCode(randomCode)}
+              </Text>
+            </View>
+          )}
 
           <View>
             <Text style={styles.label}>Fehlwürfe je −{PENALTY_POINTS}</Text>
@@ -238,6 +247,9 @@ function HelpModal({ visible, onClose }: { visible: boolean; onClose: () => void
             • Schließt ein Mitspieler eine Reihe ab, tippe auf das Schloss dieser Reihe – sie wird
             für dich gesperrt (erneut tippen hebt das wieder auf).{'\n'}
             • Bei „Gemischte Farben“ zählen die Kreuze nach der Farbe des Feldes, nicht der Reihe.
+            {'\n'}• Zufallsblock: Unter „Neues Spiel“ einen Block würfeln und den Code rechts neben
+            dem Block an Mitspieler weitergeben. Sie geben ihn bei „Code“ ein und spielen denselben
+            Block.
             {'\n'}• Jeder Fehlwurf kostet {PENALTY_POINTS} Punkte.{'\n'}
             • Spielende: zwei Reihen abgeschlossen oder vier Fehlwürfe.{'\n'}
             • Vertippt? „Rückgängig“ nimmt den letzten Schritt zurück.
@@ -259,6 +271,7 @@ const styles = StyleSheet.create({
   main: { justifyContent: 'center' },
   side: { justifyContent: 'space-between', paddingVertical: 2 },
   variantName: { fontSize: 15, fontWeight: '800', color: UI.ink },
+  code: { fontSize: 20, fontWeight: '900', color: UI.ink, letterSpacing: 2 },
   label: { fontSize: 11, color: UI.muted, fontWeight: '600', marginBottom: 4 },
   penalties: { flexDirection: 'row', gap: 4 },
   penaltyBox: {
