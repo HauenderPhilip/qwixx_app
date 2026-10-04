@@ -1,13 +1,14 @@
 {
   "expo": {
-    "name": "qwixx",
-    "slug": "qwixx",
+    "name": "Qwixx Block",
+    "slug": "qwixx-block",
     "version": "1.0.0",
-    "orientation": "portrait",
+    "orientation": "landscape",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "de.hauer.qwixxblock"
     },
     "android": {
       "adaptiveIcon": {
@@ -16,7 +17,8 @@
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "de.hauer.qwixxblock"
     },
     "web": {
       "favicon": "./assets/favicon.png"
