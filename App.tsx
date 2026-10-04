@@ -97,6 +97,16 @@ function ScoreSheetScreen() {
   const availH = height - insets.top - insets.bottom - PADDING * 2 - ROW_GAP * 3 - GAP;
   const size = Math.floor(Math.min(availW / (12 + SIDE_PANEL_CELLS), availH / 4.95));
 
+  // Im Browser lässt sich das Querformat nicht erzwingen.
+  if (height > width) {
+    return (
+      <View style={[styles.screen, styles.rotateHint]}>
+        <Text style={styles.rotateIcon}>⟳</Text>
+        <Text style={styles.rotateText}>Bitte das Handy quer halten</Text>
+      </View>
+    );
+  }
+
   return (
     <View
       style={[
@@ -241,6 +251,9 @@ function HelpModal({ visible, onClose }: { visible: boolean; onClose: () => void
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: UI.background },
+  rotateHint: { alignItems: 'center', justifyContent: 'center', gap: 12, padding: 24 },
+  rotateIcon: { fontSize: 56, color: UI.ink },
+  rotateText: { fontSize: 18, fontWeight: '700', color: UI.ink, textAlign: 'center' },
   content: { flex: 1, flexDirection: 'row', justifyContent: 'center', gap: GAP },
   main: { justifyContent: 'center' },
   side: { justifyContent: 'space-between', paddingVertical: 2 },

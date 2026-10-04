@@ -8,7 +8,7 @@ export const PALETTE: Record<Color, { band: string; text: string; cell: string }
 };
 
 export const UI = {
-  background: '#F4F1EA',
+  background: '#ECEFF3',
   sheet: '#FFFFFF',
   ink: '#1D1D1F',
   muted: '#8A8A8E',
