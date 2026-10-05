@@ -150,13 +150,23 @@ export function decodePlayer(id: string, payload: string): Omit<Player, 'online'
 // ---------------------------------------------------------------------------
 
 /** Reihen, die ein anderer Spieler derselben Runde abgeschlossen hat. */
-export function rowsLockedByOthers(players: Player[], round: number, rowCount: number): boolean[] {
+/** Pro Reihe die Namen der Mitspieler (derselben Runde), die sie abgeschlossen haben. */
+export function rowLockers(players: Player[], round: number, rowCount: number): string[][] {
   return Array.from({ length: rowCount }, (_, r) =>
-    players.some((p) => p.round === round && p.game.rows[r]?.locked),
+    players.filter((p) => p.round === round && p.game.rows[r]?.locked).map((p) => p.name),
   );
 }
 
-/** Eigener Block mit allen Sperren, die von Mitspielern kommen. */
+/**
+ * Reihen, die ein Mitspieler abgeschlossen hat, die bei mir aber noch offen sind. Nach den Regeln
+ * darf ich sie im selben Wurf noch ankreuzen und ebenfalls abschließen; danach tippe ich aufs
+ * Schloss und die Reihe ist auch bei mir zu.
+ */
+export function pendingRows(game: GameState, lockers: string[][]): boolean[] {
+  return game.rows.map((row, r) => (lockers[r]?.length ?? 0) > 0 && !row.locked && !row.closedByOther);
+}
+
+/** Eigener Block mit allen Sperren, die von Mitspielern kommen – für die Prüfung aufs Spielende. */
 export function withRemoteLocks(game: GameState, lockedByOthers: boolean[]): GameState {
   if (!lockedByOthers.some(Boolean)) return game;
   return {

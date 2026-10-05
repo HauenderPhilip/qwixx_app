@@ -16,7 +16,6 @@ import {
   MIN_MARKS_TO_LOCK,
   PENALTY_POINTS,
   addPenalty,
-  canMark,
   computeScore,
   isGameOver,
   markCell,
@@ -29,12 +28,21 @@ import {
   anyPlayerOutOfThrows,
   randomPlayerId,
   randomRoomCode,
-  rowsLockedByOthers,
+  pendingRows,
+  rowLockers,
   withRemoteLocks,
 } from './src/online';
 import { DISCLAIMER, UI } from './src/theme';
 import { useOnlineRoom } from './src/useOnlineRoom';
 import { VariantId, formatRandomCode, getVariant, randomCodeOf } from './src/variants';
+import type { Color } from './src/variants';
+
+const COLOR_NAMES: Record<Color, string> = {
+  red: 'Rot',
+  yellow: 'Gelb',
+  green: 'Grün',
+  blue: 'Blau',
+};
 
 const STORAGE_KEY = 'kreuzblock/v1';
 const MAX_HISTORY = 200;
@@ -158,13 +166,16 @@ function ScoreSheetScreen() {
 
   // Online: Reihen, die ein Mitspieler abgeschlossen hat, sind auch bei mir zu.
   const inRound = session && session.round > 0 ? session.round : null;
-  const lockedByOthers = useMemo(
-    () => (inRound ? rowsLockedByOthers(room.players, inRound, game.rows.length) : []),
+  // Die Reihe bleibt bei mir offen, bis ich den Wurf zu Ende angekreuzt und aufs Schloss getippt
+  // habe; fürs Spielende zählt sie aber sofort als geschlossen.
+  const lockers = useMemo(
+    () => (inRound ? rowLockers(room.players, inRound, game.rows.length) : []),
     [room.players, inRound, game.rows.length],
   );
-  const sheet = useMemo(() => withRemoteLocks(game, lockedByOthers), [game, lockedByOthers]);
+  const pending = useMemo(() => pendingRows(game, lockers), [game, lockers]);
   const gameOver =
-    isGameOver(sheet) || (inRound !== null && anyPlayerOutOfThrows(room.players, inRound));
+    isGameOver(withRemoteLocks(game, lockers.map((names) => names.length > 0))) ||
+    (inRound !== null && anyPlayerOutOfThrows(room.players, inRound));
 
   const standings = useMemo<Standing[]>(() => {
     if (!session) return [];
@@ -248,9 +259,10 @@ function ScoreSheetScreen() {
               <RowView
                 key={r}
                 def={rowDef}
-                state={sheet.rows[r]}
+                state={game.rows[r]}
+                pending={pending[r]}
                 size={size}
-                onMark={(c) => canMark(sheet.rows[r], c) && apply(markCell(game, r, c))}
+                onMark={(c) => apply(markCell(game, r, c))}
                 onLockPress={() => apply(toggleClosedByOther(game, r))}
               />
             ))}
@@ -330,6 +342,15 @@ function ScoreSheetScreen() {
             </View>
           </View>
 
+          {variant.rows.map((rowDef, r) =>
+            pending[r] ? (
+              <Text key={r} style={styles.pendingNote}>
+                {lockers[r].join(' und ')} {lockers[r].length > 1 ? 'haben' : 'hat'}{' '}
+                <Text style={styles.bold}>{COLOR_NAMES[rowDef.lockColor]}</Text> abgeschlossen.
+                Kreuze den Wurf noch zu Ende an, dann tippe aufs 🔒.
+              </Text>
+            ) : null,
+          )}
           {gameOver && <Text style={styles.gameOver}>Spielende!</Text>}
           {notice && <Text style={styles.notice}>{notice}</Text>}
 
@@ -420,15 +441,17 @@ function HelpModal({ visible, onClose }: { visible: boolean; onClose: () => void
             • Das letzte Feld einer Reihe ist erst ab {MIN_MARKS_TO_LOCK} Kreuzen in dieser Reihe
             frei. Kreuzt du es an, wird die Reihe abgeschlossen und das Schloss zählt als
             zusätzliches Kreuz in dieser Reihe.{'\n'}
-            • Schließt ein Mitspieler eine Reihe ab, tippe auf das Schloss dieser Reihe – sie wird
-            für dich gesperrt (erneut tippen hebt das wieder auf).{'\n'}
+            • Schließt ein Mitspieler eine Reihe ab, darfst du im selben Wurf noch in dieser Reihe
+            ankreuzen und sie auch selbst abschließen. Danach tippe auf das Schloss der Reihe – sie
+            wird für dich gesperrt (erneut tippen hebt das wieder auf).{'\n'}
             • Gewertet wird pro Reihe, auch wenn die Felder einer Reihe verschiedene Farben haben.
             {'\n'}• Zufallsblock: Unter „Neues Spiel“ einen Block würfeln und den Code rechts neben
             dem Block an Mitspieler weitergeben. Sie geben ihn bei „Code“ ein und spielen denselben
             Block.
             {'\n'}• Online spielen: Jeder nutzt sein eigenes Handy. Einer erstellt einen Raum, die
             anderen treten mit dem Code bei. Rechts seht ihr den Punktestand aller. Schließt jemand
-            eine Reihe ab, ist sie bei allen automatisch gesperrt.
+            eine Reihe ab, wird ihr Schloss bei allen hervorgehoben: Kreuzt den Wurf noch zu Ende
+            an und tippt dann aufs Schloss.
             {'\n'}• Jeder Fehlwurf kostet {PENALTY_POINTS} Punkte.{'\n'}
             • Spielende: zwei Reihen abgeschlossen oder vier Fehlwürfe.{'\n'}
             • Vertippt? „Rückgängig“ nimmt den letzten Schritt zurück.
@@ -470,6 +493,8 @@ const styles = StyleSheet.create({
   standingTotal: { fontSize: 13, color: UI.ink, fontVariant: ['tabular-nums'] },
   standingMe: { fontWeight: '800' },
   notice: { fontSize: 12, fontWeight: '700', color: '#C8102E' },
+  pendingNote: { fontSize: 11, lineHeight: 15, color: UI.ink },
+  bold: { fontWeight: '800' },
   code: { fontSize: 20, fontWeight: '900', color: UI.ink, letterSpacing: 2 },
   label: { fontSize: 11, color: UI.muted, fontWeight: '600', marginBottom: 4 },
   penalties: { flexDirection: 'row', gap: 4 },

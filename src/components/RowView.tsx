@@ -9,9 +9,11 @@ type Props = {
   size: number;
   onMark: (cellIndex: number) => void;
   onLockPress: () => void;
+  /** Ein Mitspieler hat die Reihe abgeschlossen; sie ist bei mir noch bis zum Antippen offen. */
+  pending?: boolean;
 };
 
-export function RowView({ def, state, size, onMark, onLockPress }: Props) {
+export function RowView({ def, state, size, onMark, onLockPress, pending }: Props) {
   const closed = isRowClosed(state);
   const pad = Math.round(size * 0.07);
   const inner = size - pad * 2;
@@ -70,7 +72,11 @@ export function RowView({ def, state, size, onMark, onLockPress }: Props) {
       >
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Schloss: Reihe von Mitspieler geschlossen"
+          accessibilityLabel={
+            pending
+              ? 'Schloss: Reihe jetzt auch für mich schließen'
+              : 'Schloss: Reihe von Mitspieler geschlossen'
+          }
           disabled={state.locked}
           onPress={onLockPress}
           style={({ pressed }) => [
@@ -81,10 +87,11 @@ export function RowView({ def, state, size, onMark, onLockPress }: Props) {
               borderRadius: inner,
               backgroundColor: state.closedByOther ? UI.grey : '#FFFFFF',
             },
+            pending && { borderWidth: Math.max(3, inner * 0.09), borderColor: UI.ink },
             pressed && styles.pressed,
           ]}
         >
-          <Text style={{ fontSize: inner * 0.42 }}>{closed ? '🔒' : '🔓'}</Text>
+          <Text style={{ fontSize: inner * 0.42 }}>{closed || pending ? '🔒' : '🔓'}</Text>
           {state.locked && <Cross size={inner * 0.9} />}
         </Pressable>
       </View>
