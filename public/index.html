@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>%WEB_TITLE%</title>
+    <!-- Als App auf dem Startbildschirm: Vollbild ohne Browserleiste, im Querformat. -->
+    <link rel="manifest" href="manifest.json" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Kreuzblock" />
+    <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+    <meta name="theme-color" content="#ECEFF3" />
+    <!-- The `react-native-web` recommended style reset: https://necolas.github.io/react-native-web/docs/setup/#root-element -->
+    <style id="expo-reset">
+      html,
+      body {
+        height: 100%;
+      }
+      body {
+        overflow: hidden;
+        background: #eceff3;
+      }
+      #root {
+        display: flex;
+        height: 100%;
+        flex: 1;
+      }
+    </style>
+  </head>
+
+  <body>
+    <noscript>Für den Kreuzblock muss JavaScript aktiviert sein.</noscript>
+    <div id="root"></div>
+  </body>
+</html>

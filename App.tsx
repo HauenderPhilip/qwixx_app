@@ -1,10 +1,12 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useKeepAwake } from 'expo-keep-awake';
+import { NavigationBar } from 'expo-navigation-bar';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NewGameModal } from './src/components/NewGameModal';
+import { enterFullscreen, enterFullscreenOnFirstTap, fullscreenAvailable } from './src/fullscreen';
 import { OnlineModal } from './src/components/OnlineModal';
 import { RowView } from './src/components/RowView';
 import { ScoreBar } from './src/components/ScoreBar';
@@ -71,6 +73,7 @@ function ScoreSheetScreen() {
   const [loaded, setLoaded] = useState(false);
   const [showNewGame, setShowNewGame] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
+  useEffect(() => enterFullscreenOnFirstTap(), []);
   const [showOnline, setShowOnline] = useState(false);
   const [profile, setProfile] = useState<Profile>(() => ({ playerId: randomPlayerId(), name: '' }));
   const [session, setSession] = useState<OnlineSession | null>(null);
@@ -214,10 +217,13 @@ function ScoreSheetScreen() {
   // Im Browser lässt sich das Querformat nicht erzwingen.
   if (height > width) {
     return (
-      <View style={[styles.screen, styles.rotateHint]}>
+      <Pressable style={[styles.screen, styles.rotateHint]} onPress={enterFullscreen}>
         <Text style={styles.rotateIcon}>⟳</Text>
         <Text style={styles.rotateText}>Bitte das Handy quer halten</Text>
-      </View>
+        {fullscreenAvailable() && (
+          <Text style={styles.rotateSub}>oder hier tippen für Vollbild im Querformat</Text>
+        )}
+      </Pressable>
     );
   }
 
@@ -234,6 +240,7 @@ function ScoreSheetScreen() {
       ]}
     >
       <StatusBar hidden />
+      <NavigationBar hidden />
       <View style={styles.content}>
         <View style={styles.main}>
           <View style={{ gap: ROW_GAP }}>
@@ -438,6 +445,7 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: UI.background },
   rotateHint: { alignItems: 'center', justifyContent: 'center', gap: 12, padding: 24 },
   rotateIcon: { fontSize: 56, color: UI.ink },
+  rotateSub: { fontSize: 14, color: UI.muted, textAlign: 'center' },
   rotateText: { fontSize: 18, fontWeight: '700', color: UI.ink, textAlign: 'center' },
   content: { flex: 1, flexDirection: 'row', justifyContent: 'center', gap: GAP },
   main: { justifyContent: 'center' },

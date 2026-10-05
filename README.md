@@ -49,6 +49,15 @@ Online-Spiel nicht, weil dort keine fremden Server erreichbar sind.
 GitHub Actions gebaut (`.github/workflows/pages.yml`). Einmalig im Repo unter
 *Settings → Pages → Source* „GitHub Actions“ auswählen.
 
+## Vollbild
+
+- **App (Android/iOS):** startet im Querformat ohne Status- und Navigationsleiste.
+- **Webseite:** Browser erlauben Vollbild erst nach einer Berührung. Am Handy wechselt die Seite
+  deshalb beim ersten Antippen in den Vollbildmodus und dreht ins Querformat (Android/Chrome).
+- **Zum Startbildschirm hinzufügen** (Android: Menü ⋮ → „Zum Startbildschirm hinzufügen“,
+  iPhone: Teilen → „Zum Home-Bildschirm“): Dann startet die Seite wie eine App, ganz ohne
+  Browserleiste. Auf dem iPhone ist das der einzige Weg zum Vollbild.
+
 ## Ausprobieren
 
 ```bash
