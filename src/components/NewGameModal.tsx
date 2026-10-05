@@ -16,9 +16,11 @@ type Props = {
   currentVariant: VariantId;
   onSelect: (id: VariantId) => void;
   onCancel: () => void;
+  /** Im Online-Raum startet die Auswahl eine neue Runde für alle. */
+  online?: boolean;
 };
 
-export function NewGameModal({ visible, currentVariant, onSelect, onCancel }: Props) {
+export function NewGameModal({ visible, currentVariant, onSelect, onCancel, online }: Props) {
   return (
     <Modal
       visible={visible}
@@ -29,8 +31,12 @@ export function NewGameModal({ visible, currentVariant, onSelect, onCancel }: Pr
     >
       <View style={styles.backdrop}>
         <View style={styles.card}>
-          <Text style={styles.title}>Neues Spiel</Text>
-          <Text style={styles.subtitle}>Wähle einen Spielblock – der aktuelle Block wird geleert.</Text>
+          <Text style={styles.title}>{online ? 'Neue Runde' : 'Neues Spiel'}</Text>
+          <Text style={styles.subtitle}>
+            {online
+              ? 'Wähle einen Spielblock – die Runde startet für alle im Raum neu.'
+              : 'Wähle einen Spielblock – der aktuelle Block wird geleert.'}
+          </Text>
           <ScrollView
             style={styles.scroll}
             contentContainerStyle={styles.list}

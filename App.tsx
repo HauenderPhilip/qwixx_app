@@ -1,10 +1,11 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useKeepAwake } from 'expo-keep-awake';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NewGameModal } from './src/components/NewGameModal';
+import { OnlineModal } from './src/components/OnlineModal';
 import { RowView } from './src/components/RowView';
 import { ScoreBar } from './src/components/ScoreBar';
 import {
@@ -13,13 +14,24 @@ import {
   MIN_MARKS_TO_LOCK,
   PENALTY_POINTS,
   addPenalty,
+  canMark,
   computeScore,
   isGameOver,
   markCell,
   newGame,
   toggleClosedByOther,
 } from './src/game';
+import {
+  OnlineSession,
+  RoomConfig,
+  anyPlayerOutOfThrows,
+  randomPlayerId,
+  randomRoomCode,
+  rowsLockedByOthers,
+  withRemoteLocks,
+} from './src/online';
 import { DISCLAIMER, UI } from './src/theme';
+import { useOnlineRoom } from './src/useOnlineRoom';
 import { VariantId, formatRandomCode, getVariant, randomCodeOf } from './src/variants';
 
 const STORAGE_KEY = 'kreuzblock/v1';
@@ -29,7 +41,17 @@ const GAP = 12;
 const ROW_GAP = 6;
 const SIDE_PANEL_CELLS = 2.6;
 
-type Saved = { game: GameState; history: GameState[] };
+type Profile = { playerId: string; name: string };
+
+type Saved = {
+  game: GameState;
+  history: GameState[];
+  profile?: Profile;
+  session?: OnlineSession | null;
+  createConfig?: RoomConfig | null;
+};
+
+type Standing = { id: string; name: string; total: number; online: boolean; isMe: boolean };
 
 export default function App() {
   return (
@@ -49,6 +71,12 @@ function ScoreSheetScreen() {
   const [loaded, setLoaded] = useState(false);
   const [showNewGame, setShowNewGame] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
+  const [showOnline, setShowOnline] = useState(false);
+  const [profile, setProfile] = useState<Profile>(() => ({ playerId: randomPlayerId(), name: '' }));
+  const [session, setSession] = useState<OnlineSession | null>(null);
+  const [createConfig, setCreateConfig] = useState<RoomConfig | null>(null);
+  const [onlineError, setOnlineError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
 
   useEffect(() => {
     AsyncStorage.getItem(STORAGE_KEY)
@@ -59,6 +87,9 @@ function ScoreSheetScreen() {
           setGame(saved.game);
           setHistory(saved.history ?? []);
         }
+        if (saved?.profile?.playerId) setProfile(saved.profile);
+        if (saved?.session) setSession(saved.session);
+        if (saved?.createConfig) setCreateConfig(saved.createConfig);
       })
       .catch(() => {})
       .finally(() => setLoaded(true));
@@ -66,14 +97,86 @@ function ScoreSheetScreen() {
 
   useEffect(() => {
     if (!loaded) return;
-    const saved: Saved = { game, history };
+    const saved: Saved = { game, history, profile, session, createConfig };
     AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(saved)).catch(() => {});
-  }, [game, history, loaded]);
+  }, [game, history, profile, session, createConfig, loaded]);
+
+  const sessionRef = useRef(session);
+  useEffect(() => {
+    sessionRef.current = session;
+  });
+
+  // Neue Runde im Raum: alle übernehmen Block und Rundennummer.
+  const onConfig = useCallback((config: RoomConfig) => {
+    // Der Raum existiert jetzt auf dem Server; die Erstell-Konfiguration ist erledigt.
+    setCreateConfig(null);
+    const current = sessionRef.current;
+    if (!current || current.round === config.round) return;
+    setGame(newGame(config.variantId));
+    setHistory([]);
+    setSession({ ...current, round: config.round });
+  }, []);
+
+  const onNotFound = useCallback(() => {
+    const current = sessionRef.current;
+    setOnlineError(`Den Raum ${current?.room ?? ''} gibt es nicht. Prüfe den Code.`);
+    setSession(null);
+    setShowOnline(true);
+  }, []);
+
+  const room = useOnlineRoom({ session, createConfig, game, onConfig, onNotFound });
+
+  const createRoom = (name: string) => {
+    const config: RoomConfig = { variantId: game.variantId, round: 1 };
+    setProfile((p) => ({ ...p, name }));
+    setOnlineError(null);
+    setCreateConfig(config);
+    setGame(newGame(config.variantId));
+    setHistory([]);
+    setSession({ room: randomRoomCode(), playerId: profile.playerId, name, round: 1 });
+  };
+
+  const joinRoom = (name: string, code: string) => {
+    setProfile((p) => ({ ...p, name }));
+    setOnlineError(null);
+    setCreateConfig(null);
+    setSession({ room: code, playerId: profile.playerId, name, round: 0 });
+  };
+
+  const leaveRoom = () => {
+    room.leave();
+    setSession(null);
+    setCreateConfig(null);
+  };
 
   const variant = useMemo(() => getVariant(game.variantId), [game.variantId]);
   const randomCode = randomCodeOf(game.variantId);
   const score = useMemo(() => computeScore(game, variant), [game, variant]);
-  const gameOver = isGameOver(game);
+
+  // Online: Reihen, die ein Mitspieler abgeschlossen hat, sind auch bei mir zu.
+  const inRound = session && session.round > 0 ? session.round : null;
+  const lockedByOthers = useMemo(
+    () => (inRound ? rowsLockedByOthers(room.players, inRound, game.rows.length) : []),
+    [room.players, inRound, game.rows.length],
+  );
+  const sheet = useMemo(() => withRemoteLocks(game, lockedByOthers), [game, lockedByOthers]);
+  const gameOver =
+    isGameOver(sheet) || (inRound !== null && anyPlayerOutOfThrows(room.players, inRound));
+
+  const standings = useMemo<Standing[]>(() => {
+    if (!session) return [];
+    const others = room.players
+      .filter((p) => p.round === session.round)
+      .map((p) => ({
+        id: p.id,
+        name: p.name,
+        total: computeScore(p.game, getVariant(p.game.variantId)).total,
+        online: p.online,
+        isMe: false,
+      }));
+    const me = { id: session.playerId, name: session.name, total: score.total, online: true, isMe: true };
+    return [me, ...others].sort((a, b) => b.total - a.total);
+  }, [session, room.players, score.total]);
 
   const apply = (next: GameState) => {
     if (next === game) return;
@@ -88,10 +191,20 @@ function ScoreSheetScreen() {
   };
 
   const startNewGame = (id: VariantId) => {
+    setShowNewGame(false);
+    if (session) {
+      if (!room.startRound(id)) setNotice('Keine Verbindung – neue Runde nicht gestartet.');
+      return;
+    }
     setGame(newGame(id));
     setHistory([]);
-    setShowNewGame(false);
   };
+
+  useEffect(() => {
+    if (!notice) return;
+    const timer = setTimeout(() => setNotice(null), 4000);
+    return () => clearTimeout(timer);
+  }, [notice]);
 
   // Zellgröße so wählen, dass Block + Wertung auf den Bildschirm passen.
   const availW = width - insets.left - insets.right - PADDING * 2 - GAP;
@@ -128,9 +241,9 @@ function ScoreSheetScreen() {
               <RowView
                 key={r}
                 def={rowDef}
-                state={game.rows[r]}
+                state={sheet.rows[r]}
                 size={size}
-                onMark={(c) => apply(markCell(game, r, c))}
+                onMark={(c) => canMark(sheet.rows[r], c) && apply(markCell(game, r, c))}
                 onLockPress={() => apply(toggleClosedByOther(game, r))}
               />
             ))}
@@ -141,9 +254,42 @@ function ScoreSheetScreen() {
         </View>
 
         <View style={[styles.side, { width: size * SIDE_PANEL_CELLS }]}>
-          <Text style={styles.variantName} numberOfLines={2}>
-            {variant.name}
-          </Text>
+          <View style={styles.titleRow}>
+            <Text style={styles.variantName} numberOfLines={2}>
+              {variant.name}
+            </Text>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Regeln"
+              onPress={() => setShowHelp(true)}
+              style={styles.helpButton}
+            >
+              <Text style={styles.helpButtonText}>?</Text>
+            </Pressable>
+          </View>
+          {session && (
+            <View style={styles.standings}>
+              <Text style={styles.label}>
+                Raum {session.room}
+                {room.status === 'connected' ? '' : ' · offline'}
+              </Text>
+              {standings.slice(0, 6).map((p, i) => (
+                <View key={p.id} style={styles.standingRow}>
+                  <View style={[styles.dot, !p.online && styles.dotOff]} />
+                  <Text
+                    style={[styles.standingName, p.isMe && styles.standingMe]}
+                    numberOfLines={1}
+                  >
+                    {gameOver && i === 0 ? '🏆 ' : ''}
+                    {p.name}
+                  </Text>
+                  <Text style={[styles.standingTotal, p.isMe && styles.standingMe]}>
+                    {p.total}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          )}
           {randomCode && (
             <View>
               <Text style={styles.label}>Code für Mitspieler</Text>
@@ -178,11 +324,19 @@ function ScoreSheetScreen() {
           </View>
 
           {gameOver && <Text style={styles.gameOver}>Spielende!</Text>}
+          {notice && <Text style={styles.notice}>{notice}</Text>}
 
           <View style={styles.buttons}>
             <SideButton label="↶ Rückgängig" onPress={undo} disabled={history.length === 0} />
-            <SideButton label="Neues Spiel" onPress={() => setShowNewGame(true)} />
-            <SideButton label="Regeln" onPress={() => setShowHelp(true)} subtle />
+            <SideButton
+              label={session ? 'Neue Runde' : 'Neues Spiel'}
+              onPress={() => setShowNewGame(true)}
+            />
+            <SideButton
+              label={session ? 'Online-Raum' : 'Online spielen'}
+              onPress={() => setShowOnline(true)}
+              subtle
+            />
           </View>
         </View>
       </View>
@@ -192,6 +346,21 @@ function ScoreSheetScreen() {
         currentVariant={game.variantId}
         onSelect={startNewGame}
         onCancel={() => setShowNewGame(false)}
+        online={session !== null}
+      />
+      <OnlineModal
+        visible={showOnline}
+        session={session}
+        status={room.status}
+        defaultName={profile.name}
+        blockName={variant.name}
+        error={onlineError}
+        onCreate={(name) => {
+          createRoom(name);
+        }}
+        onJoin={joinRoom}
+        onLeave={leaveRoom}
+        onClose={() => setShowOnline(false)}
       />
       <HelpModal visible={showHelp} onClose={() => setShowHelp(false)} />
     </View>
@@ -250,6 +419,9 @@ function HelpModal({ visible, onClose }: { visible: boolean; onClose: () => void
             {'\n'}• Zufallsblock: Unter „Neues Spiel“ einen Block würfeln und den Code rechts neben
             dem Block an Mitspieler weitergeben. Sie geben ihn bei „Code“ ein und spielen denselben
             Block.
+            {'\n'}• Online spielen: Jeder nutzt sein eigenes Handy. Einer erstellt einen Raum, die
+            anderen treten mit dem Code bei. Rechts seht ihr den Punktestand aller. Schließt jemand
+            eine Reihe ab, ist sie bei allen automatisch gesperrt.
             {'\n'}• Jeder Fehlwurf kostet {PENALTY_POINTS} Punkte.{'\n'}
             • Spielende: zwei Reihen abgeschlossen oder vier Fehlwürfe.{'\n'}
             • Vertippt? „Rückgängig“ nimmt den letzten Schritt zurück.
@@ -270,7 +442,26 @@ const styles = StyleSheet.create({
   content: { flex: 1, flexDirection: 'row', justifyContent: 'center', gap: GAP },
   main: { justifyContent: 'center' },
   side: { justifyContent: 'space-between', paddingVertical: 2 },
-  variantName: { fontSize: 15, fontWeight: '800', color: UI.ink },
+  titleRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 6 },
+  variantName: { flex: 1, fontSize: 15, fontWeight: '800', color: UI.ink },
+  helpButton: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 1.5,
+    borderColor: UI.grey,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  helpButtonText: { fontSize: 13, fontWeight: '800', color: UI.ink },
+  standings: { gap: 2 },
+  standingRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  dot: { width: 7, height: 7, borderRadius: 4, backgroundColor: '#2E9D48' },
+  dotOff: { backgroundColor: UI.grey },
+  standingName: { flex: 1, fontSize: 13, color: UI.ink },
+  standingTotal: { fontSize: 13, color: UI.ink, fontVariant: ['tabular-nums'] },
+  standingMe: { fontWeight: '800' },
+  notice: { fontSize: 12, fontWeight: '700', color: '#C8102E' },
   code: { fontSize: 20, fontWeight: '900', color: UI.ink, letterSpacing: 2 },
   label: { fontSize: 11, color: UI.muted, fontWeight: '600', marginBottom: 4 },
   penalties: { flexDirection: 'row', gap: 4 },

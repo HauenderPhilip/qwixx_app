@@ -28,6 +28,27 @@ Zahlen 2–12, jede Farbe kommt insgesamt 11-mal vor und jede Reihe endet mit ei
 - Spielende-Hinweis bei zwei geschlossenen Reihen oder vier Fehlwürfen.
 - Rückgängig, Spielstand wird automatisch gespeichert, Bildschirm bleibt an.
 
+## Online gegeneinander spielen
+
+Jeder spielt auf seinem eigenen Handy:
+
+1. Einer tippt auf **Online spielen**, gibt seinen Namen ein und erstellt einen Raum. Er bekommt
+   einen Raumcode aus 4 Buchstaben.
+2. Die anderen öffnen die App bzw. Webseite, tippen auf **Online spielen**, geben ihren Namen und
+   den Code ein und treten bei.
+3. Rechts steht die Rangliste mit den Punkten aller. Schließt jemand eine Reihe ab, ist sie bei
+   allen gesperrt. Das Spiel endet für alle, wenn zwei Reihen zu sind oder jemand vier Fehlwürfe
+   hat.
+4. **Neue Runde** startet für alle eine neue Runde mit dem gewählten Block.
+
+Die Verbindung läuft über den öffentlichen MQTT-Server `broker.emqx.io` (ohne Anmeldung). Namen
+und Punkte kann jeder sehen, der den Raumcode kennt. Im claude.ai-Link funktioniert das
+Online-Spiel nicht, weil dort keine fremden Server erreichbar sind.
+
+**Web-Version:** https://hauenderphilip.github.io/qwixx_app/ – wird bei jedem Push über
+GitHub Actions gebaut (`.github/workflows/pages.yml`). Einmalig im Repo unter
+*Settings → Pages → Source* „GitHub Actions“ auswählen.
+
 ## Ausprobieren
 
 ```bash
@@ -50,8 +71,11 @@ npx eas-cli@latest build --platform ios       # benötigt Apple-Developer-Accoun
 
 - `src/variants.ts` – Aufbau der Spielblöcke
 - `src/game.ts` – Regeln und Wertung (reine Funktionen)
+- `src/online.ts` – Online-Räume: Themen, Nachrichten, Regeln über alle Spieler
+- `src/useOnlineRoom.ts` – Verbindung und Mitspieler als React-Hook
+- `src/net/mqtt.ts` – kleiner MQTT-Client über WebSocket (ohne Abhängigkeiten)
 - `src/components/` – Oberfläche
-- `npm run typecheck` – TypeScript-Prüfung
+- `npm run typecheck` / `npm run lint` – Prüfungen
 
 ## Hinweis
 
